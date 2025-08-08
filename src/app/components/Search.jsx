@@ -117,6 +117,11 @@ export default function Search() {
                 onChange={(e) => setRepoUrl(e.target.value)}
                 onFocus={() => setIsFocused(true)}
                 onBlur={() => setIsFocused(false)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    handleGenerate();
+                  }
+                }}
                 placeholder="Enter Github or your local repo url"
                 className={`w-full pl-12 pr-32 py-4 border-2 rounded-xl font-medium transition-all duration-200 bg-white/80 backdrop-blur-sm focus:bg-white focus:outline-none focus:ring-4 focus:ring-slate-200 shadow-lg ${
                   isFocused
@@ -241,7 +246,7 @@ export default function Search() {
             </div>
             <h3 className="font-semibold text-gray-900 mb-1">Lightning Fast</h3>
             <p className="text-sm text-gray-600">
-              Generate tutorials in seconds, not hours
+              Generate tutorials in minutes, not hours
             </p>
           </div>
         </div>
