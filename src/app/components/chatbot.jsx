@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState } from "react";
 import {
   Bot,
   User,
@@ -11,256 +11,33 @@ import {
   Mic,
   Volume2,
   Pause,
+  Check,
 } from "lucide-react";
+import { useChatbot } from "../hooks/useChatbot";
 
 export default function Chatbot() {
   const [isOpen, setIsOpen] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [input, setInput] = useState("");
-  const [messages, setMessages] = useState([
-    {
-      id: 1,
-      role: "ai",
-      content: "Hello! I'm a friendly AI assistant. How can I help you today?",
-    },
-  ]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isListening, setIsListening] = useState(false);
-  const [dots, setDots] = useState("");
-  const [activeMessageIdForReadAloud, setActiveMessageIdForReadAloud] =
-    useState(null);
-  const [isSpeechPaused, setIsSpeechPaused] = useState(false);
 
-  const messagesEndRef = useRef(null);
-  const recognitionRef = useRef(null);
-  const utteranceRef = useRef(null);
-  const textareaRef = useRef(null);
-
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
-
-  useEffect(() => {
-    if ("SpeechRecognition" in window || "webkitSpeechRecognition" in window) {
-      const SpeechRecognition =
-        window.SpeechRecognition || window.webkitSpeechRecognition;
-      recognitionRef.current = new SpeechRecognition();
-      recognitionRef.current.continuous = true;
-      recognitionRef.current.interimResults = false;
-      recognitionRef.current.lang = "en-US";
-
-      recognitionRef.current.onstart = () => {
-        setIsListening(true);
-        setInput("");
-        setDots(".");
-      };
-
-      recognitionRef.current.onresult = (event) => {
-        const transcript =
-          event.results[event.results.length - 1][0].transcript;
-        setInput(transcript);
-      };
-
-      recognitionRef.current.onerror = (event) => {
-        setIsListening(false);
-        setDots("");
-      };
-
-      recognitionRef.current.onend = () => {
-        setIsListening(false);
-        setDots("");
-      };
-    }
-  }, []);
-
-  useEffect(() => {
-    let interval;
-    if (isListening) {
-      interval = setInterval(() => {
-        setDots((prev) => (prev.length < 3 ? prev + "." : "."));
-      }, 500);
-    } else {
-      setDots("");
-    }
-    return () => clearInterval(interval);
-  }, [isListening]);
-
-  const toggleVoiceInput = () => {
-    if (isListening) {
-      recognitionRef.current.stop();
-    } else {
-      recognitionRef.current.start();
-    }
-  };
-
-  const handleReadAloud = (text, messageId) => {
-    if (!("speechSynthesis" in window)) {
-      alert("Text-to-speech is not supported in your browser.");
-      return;
-    }
-
-    const isSameMessageAndActive =
-      activeMessageIdForReadAloud === messageId &&
-      (window.speechSynthesis.speaking || window.speechSynthesis.paused);
-
-    if (isSameMessageAndActive) {
-      if (window.speechSynthesis.speaking && !isSpeechPaused) {
-        window.speechSynthesis.pause();
-        setIsSpeechPaused(true);
-      } else if (window.speechSynthesis.paused) {
-        window.speechSynthesis.resume();
-        setIsSpeechPaused(false);
-      }
-    } else {
-      if (window.speechSynthesis.speaking || window.speechSynthesis.paused) {
-        window.speechSynthesis.cancel();
-        if (utteranceRef.current) {
-          utteranceRef.current.onend = null;
-          utteranceRef.current.onerror = null;
-          utteranceRef.current = null;
-        }
-      }
-
-      setActiveMessageIdForReadAloud(messageId);
-      setIsSpeechPaused(false);
-
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = "en-US";
-
-      utterance.onend = () => {
-        setActiveMessageIdForReadAloud(null);
-        setIsSpeechPaused(false);
-        utteranceRef.current = null;
-      };
-
-      utterance.onerror = () => {
-        setActiveMessageIdForReadAloud(null);
-        setIsSpeechPaused(false);
-        utteranceRef.current = null;
-      };
-
-      window.speechSynthesis.speak(utterance);
-      utteranceRef.current = utterance;
-    }
-  };
-
-  const handleSend = async () => {
-    if (input.trim() === "" || isLoading) return;
-
-    if (window.speechSynthesis.speaking || window.speechSynthesis.paused) {
-      window.speechSynthesis.cancel();
-      setActiveMessageIdForReadAloud(null);
-      setIsSpeechPaused(false);
-      utteranceRef.current = null;
-    }
-
-    const userMessage = {
-      id: Date.now(),
-      role: "user",
-      content: input,
-    };
-
-    setMessages((prev) => [...prev, userMessage]);
-
-    setInput("");
-    if (textareaRef.current) {
-      textareaRef.current.style.height = "48px";
-    }
-
-    setIsLoading(true);
-
-    try {
-      const urlParams = new URLSearchParams(window.location.search);
-      const repoUrl = urlParams.get("repo");
-
-      const payload = {
-        question: userMessage.content,
-      };
-
-      if (repoUrl) {
-        payload.repo_url = repoUrl;
-      }
-
-      const response = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const result = await response.json();
-
-      const aiMessage = {
-        id: Date.now() + 1,
-        role: "ai",
-        content:
-          result?.answer ||
-          result?.content ||
-          "Sorry, I couldn't get a response. Please try again.",
-      };
-
-      setMessages((prev) => [...prev, aiMessage]);
-    } catch (error) {
-      console.error("Error fetching from the API:", error);
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: Date.now() + 1,
-          role: "ai",
-          content:
-            "Sorry, something went wrong. Please check your connection or try again later.",
-        },
-      ]);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleInputChange = (e) => {
-    setInput(e.target.value);
-    if (textareaRef.current) {
-      textareaRef.current.style.height =
-        e.target.value.trim() === ""
-          ? "48px"
-          : textareaRef.current.scrollHeight + "px";
-    }
-  };
-
-  const handleKeyPress = (e) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
-    }
-  };
-
-  const handleNewConversation = () => {
-    if (window.speechSynthesis.speaking || window.speechSynthesis.paused) {
-      window.speechSynthesis.cancel();
-      setActiveMessageIdForReadAloud(null);
-      setIsSpeechPaused(false);
-      utteranceRef.current = null;
-    }
-    setMessages([
-      {
-        id: 1,
-        role: "ai",
-        content: "New conversation started! How can I assist you?",
-      },
-    ]);
-    setInput("");
-    if (textareaRef.current) {
-      textareaRef.current.style.height = "48px";
-    }
-  };
-
-  const handleCopyMessage = (content) => {
-    navigator.clipboard.writeText(content).then(() => {
-      alert("Copied to clipboard!");
-    });
-  };
+  const {
+    messages,
+    input,
+    isLoading,
+    isListening,
+    dots,
+    activeMessageIdForReadAloud,
+    isSpeechPaused,
+    copiedMessageId, 
+    messagesEndRef,
+    textareaRef,
+    handleSend,
+    handleInputChange,
+    handleKeyPress,
+    handleNewConversation,
+    handleCopyMessage,
+    toggleVoiceInput,
+    handleReadAloud,
+  } = useChatbot();
 
   const chatWindowClass = `
     ${isOpen ? "flex" : "hidden"}
@@ -269,8 +46,7 @@ export default function Chatbot() {
         ? "fixed inset-0 w-full h-full"
         : "fixed bottom-20 right-5 w-[440px] h-[70vh] max-h-[700px]"
     }
-    flex-col bg-white shadow-2xl rounded-2xl transition-all duration-300 ease-in-out z-50
-  `;
+    flex-col bg-white shadow-2xl rounded-2xl transition-all duration-300 ease-in-out z-50`;
 
   return (
     <>
@@ -334,6 +110,7 @@ export default function Chatbot() {
                         : "bg-gray-100 rounded-bl-none"
                     }`}
                   >
+                    {/* --- REVERTED: Removed Mermaid logic for simple text display --- */}
                     <p className="text-sm whitespace-pre-wrap">
                       {message.content}
                     </p>
@@ -344,7 +121,6 @@ export default function Chatbot() {
                     </div>
                   )}
                 </div>
-
                 {message.role === "ai" && (
                   <div className="flex items-center gap-2 mt-1 ml-11">
                     <button
@@ -360,17 +136,23 @@ export default function Chatbot() {
                         <Volume2 size={16} />
                       )}
                     </button>
+                    {/* --- UPDATED: Copy button with new feedback --- */}
                     <button
-                      onClick={() => handleCopyMessage(message.content)}
+                      onClick={() =>
+                        handleCopyMessage(message.id, message.content)
+                      }
                       className="p-1 text-gray-600 hover:text-black rounded-full hover:bg-gray-200 transition-colors"
                     >
-                      <Copy size={16} />
+                      {copiedMessageId === message.id ? (
+                        <Check size={16}  />
+                      ) : (
+                        <Copy size={16} />
+                      )}
                     </button>
                   </div>
                 )}
               </div>
             ))}
-
             {isLoading && (
               <div className="flex items-end gap-3 justify-start">
                 <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
@@ -393,18 +175,15 @@ export default function Chatbot() {
           <div className="flex items-end">
             <button
               onClick={toggleVoiceInput}
-              className={`w-10 h-10 mr-2 rounded-full flex items-center justify-center transition-all
-                ${
-                  isListening
-                    ? "bg-gray-500 text-white glowing-mic-animation"
-                    : "bg-gray-500 text-white hover:bg-gray-600"
-                }
-                disabled:bg-gray-300 disabled:cursor-not-allowed`}
+              className={`w-10 h-10 mr-2 rounded-full flex items-center justify-center transition-all ${
+                isListening
+                  ? "bg-gray-500 text-white glowing-mic-animation"
+                  : "bg-gray-500 text-white hover:bg-gray-600"
+              } disabled:bg-gray-300 disabled:cursor-not-allowed`}
               disabled={isLoading}
             >
               <Mic size={20} />
             </button>
-
             {isListening ? (
               <div className="flex-1 bg-white border border-gray-300 text-black rounded-xl py-3 px-5 flex items-center ">
                 <span className="text-gray-500 italic">Listening{dots}</span>
@@ -420,7 +199,6 @@ export default function Chatbot() {
                 disabled={isLoading}
               />
             )}
-
             <div className="ml-3 flex flex-col items-end">
               {!isListening && (
                 <span className="text-xs text-gray-500 mb-1">
