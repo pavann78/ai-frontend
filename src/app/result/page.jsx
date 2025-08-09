@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import ResultPage from "./ResultPage";
+import ResultPage from "./resultPage";
 
 export default function ResultPageWrapper() {
   return (
