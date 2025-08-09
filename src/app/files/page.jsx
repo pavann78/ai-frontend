@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import Chatbot from "../components/Chatbot";
+import Chatbot from "../components/chatbot";
 import Sidebar from "../components/Sidebar";
 import { parseChapters } from "../utils/parseChapters";
 import mermaid from "mermaid";
