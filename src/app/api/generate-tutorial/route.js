@@ -4,7 +4,7 @@ export async function POST(request) {
   try {
     const { repo_url } = await request.json();
     try {
-      const response = await fetch('http://localhost:8000/tutorial/get-tutorial', {
+      const response = await fetch('https://ai-backend-p6sz.onrender.com/tutorial/get-tutorial', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ repo_url }),

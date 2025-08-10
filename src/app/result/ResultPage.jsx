@@ -27,7 +27,7 @@ export default function ResultPage() {
     );
   }
 
-    // Auto-scroll to bottom whenever logs change (smooth)
+  // Auto-scroll to bottom whenever logs change (smooth)
   useLayoutEffect(() => {
     if (logRef.current) {
       requestAnimationFrame(() => {
@@ -40,7 +40,7 @@ export default function ResultPage() {
   }, [filteredLogs]);
 
   return (
-    <div className="min-h-full bg-gradient-to-br from-blue-50 via-white to-indigo-50 p-8">
+    <div className="min-h-screen pt-25">
       <Toaster position="top-center" richColors expand />
 
       <div className="max-w-3xl mx-auto">

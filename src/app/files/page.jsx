@@ -62,7 +62,7 @@ export default function FilesPage() {
   }, [activeId]);
 
   return (
-    <div className="flex h-screen bg-gray-50 font-sans text-gray-900 overflow-hidden">
+    <div className="flex h-screen bg-gray-50 font-sans text-gray-900 pt-18">
       <Sidebar
         sidebarData={sidebarData}
         activeId={activeId}

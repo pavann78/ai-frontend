@@ -32,7 +32,7 @@ export default function Search() {
     }
   };
   return (
-    <div className="min-h-full mt-10 bg-gradient-to-br from-slate-50 via-white to-blue-50 flex items-center justify-center p-4">
+    <div className="min-h-screen flex items-center justify-center pt-16">
       <Toaster position="top-center" expand={true} richColors />
 
       <div className="w-full max-w-[730px] mx-auto">
