@@ -160,7 +160,7 @@ export function useStreamLogs(repo) {
                     !cleanedLine.includes("Stream complete")
                 ) {
                     logEntry = {
-                        type: "info",
+                        type: "success",
                         message: cleanedLine,
                         timestamp: new Date().toLocaleTimeString(),
                         icon: FileText,
