@@ -6,7 +6,7 @@ export async function POST(req) {
             return new Response("Missing repo_url", { status: 400 });
         }
 
-        const res = await fetch("https://ai-backend-p6sz.onrender.com/generate-stream", {
+        const res = await fetch("https://ai-backend-lrsm.onrender.com/tutorial/generate-stream", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ repo_url }),

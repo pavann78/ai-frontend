@@ -1,6 +1,6 @@
 export default function Sidebar({ sidebarData, activeId, setActiveId }) {
     return (
-        <aside className="w-64 bg-white text-black p-4 flex flex-col shadow-lg border-r border-gray-200 rounded-lg m-4">
+        <aside className="w-64 bg-white text-black p-4 flex flex-col shadow-lg border-r border-gray-200 rounded-lg m-4 overflow-auto">
             <div>
                 <h2 className="text-2xl font-medium text-gray-800 mb-6">Chapters</h2>
                 <nav className="overflow-y-auto flex-1">
